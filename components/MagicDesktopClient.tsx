@@ -20,12 +20,17 @@ export default function MagicDesktopClient() {
 
     useEffect(() => {
         setMounted(true);
-        // 1. Generate Session ID
-        const newSession = uuidv4();
-        setSessionId(newSession);
+
+        // 1. Get or Generate Session ID (Persistent)
+        let sessionId = localStorage.getItem("magic_session_id");
+        if (!sessionId) {
+            sessionId = uuidv4();
+            localStorage.setItem("magic_session_id", sessionId);
+        }
+        setSessionId(sessionId);
 
         // 2. Subscribe to Realtime Channel
-        const channel = supabase.channel(`magic-${newSession}`);
+        const channel = supabase.channel(`magic-${sessionId}`);
 
         channel
             .on("broadcast", { event: "clipboard-sync" }, (payload) => {
@@ -36,7 +41,7 @@ export default function MagicDesktopClient() {
             })
             .subscribe((status) => {
                 if (status === "SUBSCRIBED") {
-                    console.log("Ready to receive on channel " + newSession);
+                    console.log("Ready to receive on channel " + sessionId);
                 }
             });
 
